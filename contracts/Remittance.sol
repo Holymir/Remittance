@@ -7,7 +7,7 @@ contract Remittance {
 
 	mapping(bytes32 => Transaction) public remittances;
 
-	// Just for keeping the localvalues. This is actually happening offline	
+	// Just for keeping the localvalues. This is actually happends offline	
 	mapping (bytes32 => uint) public localCurrency;
 	
 
