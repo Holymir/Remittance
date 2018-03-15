@@ -10,9 +10,12 @@ contract("Remittance", function(accounts) {
 
 	beforeEach(async () => {
 
-		contract = await Remittance.new();	
+			contract = await Remittance.new();	
+			await contract.setFee(50, {from: owner});
+			await contract.setMaxTimeLimit(60000, {from: owner});	
 			
-	});	
+		});	
+
 
 	function wait(ms){
 		var start = new Date().getTime();
@@ -23,12 +26,7 @@ contract("Remittance", function(accounts) {
 	}
 
 	describe("Creating a transaction Tests", () => {
-
-		beforeEach(async () => {
-
-			contract = await Remittance.new();		
 			
-		});	
 
 		it("Has an correct owner", async function () {
 
@@ -37,7 +35,7 @@ contract("Remittance", function(accounts) {
 
 		it("Should create a transaction with correct values", async function () {
 
-	    	let hash = await contract.giveMeSomeHash("pass1", "pass2");
+	    	let hash = await contract.giveMeSomeHash("pass1", "pass2");	    	
 
 			await contract.createTransaction(hash, 60000, "Pesho", {from: accOne, value: 10});
 
@@ -137,7 +135,7 @@ contract("Remittance", function(accounts) {
 
 		it("Should Make a propper Exchage", async function () {
 
-			let hash = await contract.giveMeSomeHash("pass1", "pass2");
+			let hash = await contract.giveMeSomeHash("pass1", "pass2");			
 
 			await contract.createTransaction(hash, 60000, "Pesho", {from: accOne, value: 500});
 

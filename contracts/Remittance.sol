@@ -3,17 +3,27 @@ pragma solidity ^0.4.19;
 contract Remittance {
 	
 	address public owner;
+	uint private fee;
+	uint public maxTimeLimit;
 	uint public ownersCommission;
 
 	mapping(bytes32 => Transaction) public remittances;
 
-	// Just for keeping the localvalues. This is actually happends offline	
+	// Just for keeping the localvalues. This is actually happens offline	
 	mapping (bytes32 => uint) public localCurrency;
 	
 
 	function Remittance () public {
 		owner = msg.sender;
 	}	
+
+	function setFee (uint _fee) public onlyOwner(){
+		fee = _fee;
+	}
+
+	function setMaxTimeLimit(uint _maxTimeLimit) public onlyOwner(){
+		maxTimeLimit = _maxTimeLimit;
+	}
 
 	modifier onlyOwner() { 
 		require(msg.sender == owner); 
@@ -41,12 +51,20 @@ contract Remittance {
 	}
 
 	// Checks is the time limit reached
-	function checkWithinTimeLimit(uint _time) view internal returns(bool) { 
-		return now <= _time; 
+	modifier onlyWithinTimeLimit(bytes32 _passOne, bytes32 _passTwo) { 
+		bytes32 hashToCheck = keccak256(_passOne, _passTwo);
+		require (now <= remittances[hashToCheck].timeLimit);
+		_;		
+	}
+
+	modifier onlyAfterTimeLimit(bytes32 _passOne, bytes32 _passTwo) { 
+		bytes32 hashToCheck = keccak256(_passOne, _passTwo);
+		require (now > remittances[hashToCheck].timeLimit);
+		_;		
 	}	
 
 	// Checks is there a transaction with the same passwords
-	function checkIsEntity(bytes32 entityAddress) internal view returns(bool isIndeed) {
+	function checkIsEntity(bytes32 entityAddress) internal view returns(bool) {
       	return remittances[entityAddress].isEntity;
   }
 
@@ -55,7 +73,7 @@ contract Remittance {
 
 		require(msg.value > 0);
 		require(!checkIsEntity(_hashedPass));
-		require(_timeLimit <= 60000);		
+		require(_timeLimit <= maxTimeLimit);		
 
 		remittances[_hashedPass].from = msg.sender;
 		remittances[_hashedPass].recieverID = _recieverID;
@@ -66,17 +84,16 @@ contract Remittance {
 		LogTransactionCreated(_hashedPass, msg.sender, _recieverID, msg.value, _timeLimit);
 	}
 
-	function exchangeShop(bytes32 _passOne, bytes32 _passTwo, bytes32 _recieverID) public payable onlyOwner(){
+	function exchangeShop(bytes32 _passOne, bytes32 _passTwo, bytes32 _recieverID) public payable onlyWithinTimeLimit(_passOne, _passTwo) onlyOwner(){
 
 		bytes32 hashToCheck = keccak256(_passOne, _passTwo);
 
 		require(remittances[hashToCheck].recieverID == _recieverID);
-		require(checkWithinTimeLimit(remittances[hashToCheck].timeLimit));
 
 		// Here i can add some "exchange" commission to contractOwner (me).
-		ownersCommission += remittances[hashToCheck].amount / 50;
+		ownersCommission += remittances[hashToCheck].amount / fee;
 
-		uint amount = remittances[hashToCheck].amount - remittances[hashToCheck].amount / 50;
+		uint amount = remittances[hashToCheck].amount - remittances[hashToCheck].amount / fee;
 
 		// Just for the LogRemittanceReceived.
 		address from = remittances[hashToCheck].from;	
@@ -89,12 +106,11 @@ contract Remittance {
 		LogRemittanceReceived(hashToCheck, from, _recieverID, amount);
 	}
 
-	function returnFundsAfterTimeLimit(bytes32 _passOne, bytes32 _passTwo) public {
+	function returnFundsAfterTimeLimit(bytes32 _passOne, bytes32 _passTwo) public onlyAfterTimeLimit(_passOne, _passTwo){
 
 		bytes32 hashToCheck = keccak256(_passOne, _passTwo);
 
 		require(remittances[hashToCheck].from == msg.sender);
-		require(!checkWithinTimeLimit(remittances[hashToCheck].timeLimit));
 
 		uint amount = remittances[hashToCheck].amount;
 		delete(remittances[hashToCheck]);

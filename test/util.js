@@ -13,7 +13,14 @@ const util = {
 			assert(outOfGas || revert || outOfMoney || invalidContractAddress, "Expected throw, got '" + error + "' instead");
 			return
 		}
+
 		assert.fail('Expected throw not received');
+	},
+
+	web3FutureTime: (web3) => {
+		return web3.eth.getBlock(web3.eth.blockNumber).timestamp + 60 * 60;
 	}
 }
 module.exports = util;
+
+
