@@ -23,11 +23,12 @@ contract Remittance {
 
 	function setMaxTimeLimit(uint _maxTimeLimit) public onlyOwner(){
 		maxTimeLimit = _maxTimeLimit;
-	}
+	}	
 
-	modifier onlyOwner() { 
-		require(msg.sender == owner); 
-		_; 
+	// For testing the contract..
+	function giveMeSomeHash(bytes32 _passOne, bytes32 _passTwo) public pure returns (bytes32 initialHash)	{
+
+    	return keccak256(_passOne, _passTwo);
 	}
 	
 	struct Transaction {
@@ -42,12 +43,11 @@ contract Remittance {
 	event LogTransactionCreated(bytes32 hash, address from, bytes32 _recieverID, uint value ,uint timeLimit);
 	event LogRemittanceReceived(bytes32 hash, address from, bytes32 _recieverID, uint value);
 	event LogReturnFundsAfterTimeLimit(bytes32 hash, address _to, uint value);
-	event LogOwnerCommissionWithdraw(uint value);
+	event LogOwnerCommissionWithdraw(uint value);	
 
-	// For testing the contract..
-	function giveMeSomeHash(bytes32 _passOne, bytes32 _passTwo) public pure returns (bytes32 initialHash)	{
-
-    	return keccak256(_passOne, _passTwo);
+	modifier onlyOwner() { 
+		require(msg.sender == owner); 
+		_; 
 	}
 
 	// Checks is the time limit reached
@@ -64,15 +64,15 @@ contract Remittance {
 	}	
 
 	// Checks is there a transaction with the same passwords
-	function checkIsEntity(bytes32 entityAddress) internal view returns(bool) {
-      	return remittances[entityAddress].isEntity;
+	modifier onlyEmptyEntity(bytes32 entityAddress) {      	
+      	 require (!remittances[entityAddress].isEntity);
+      	 _;
   }
 
   	// Creates a transaction from owner to "Bobs" address..
-	function createTransaction(bytes32 _hashedPass, uint _timeLimit, bytes32 _recieverID) public payable {
+	function createTransaction(bytes32 _hashedPass, uint _timeLimit, bytes32 _recieverID) public payable onlyEmptyEntity(_hashedPass){
 
 		require(msg.value > 0);
-		require(!checkIsEntity(_hashedPass));
 		require(_timeLimit <= maxTimeLimit);		
 
 		remittances[_hashedPass].from = msg.sender;

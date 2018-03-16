@@ -187,6 +187,7 @@ contract("Remittance", function(accounts) {
 
 			await contract.createTransaction(hash, 1, "Pesho", {from: accOne, value: 500});
 			
+			//let waitSomeSec = new web3FutureTime();
 			let waitSomeSec = new wait(2000);
 
 			await expectThrow(contract.exchangeShop("pass1", "pass2", "Pesho", {from: owner}));

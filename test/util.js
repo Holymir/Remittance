@@ -18,7 +18,7 @@ const util = {
 	},
 
 	web3FutureTime: (web3) => {
-		return web3.eth.getBlock(web3.eth.blockNumber).timestamp + 60 * 60;
+		return web3.eth.getBlock(web3.eth.blockNumber).timestamp + 10;
 	}
 }
 module.exports = util;
